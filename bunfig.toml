@@ -1,0 +1,14 @@
+# Bun configuration for Metric McMaster Chrome Extension
+# Docs: https://bun.sh/docs/bunfig
+
+[install]
+# Optional: customize install behavior
+
+[run]
+# Optional: customize run behavior
+
+[define]
+# Optional: define global constants
+
+[test]
+preload = "./happydom.ts"

@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Metric McMaster",
+  "version": "1.0",
+  "description": "Converts imperial units to metric on McMaster-Carr and toggles tooltips via toolbar button.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://*.mcmaster.com/*", "https://mcmaster.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "assets/metric-mcmaster-icon-16.png",
+    "48": "assets/metric-mcmaster-icon-48.png",
+    "128": "assets/metric-mcmaster-icon-128.png"
+  },
+  "action": {
+    "default_title": "Toggle metric tooltips"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.mcmaster.com/*", "*://mcmaster.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+/node_modules/
+/dist/
+# Bun/TypeScript/VSCode/OS generated files
+bun.lockb
+*.js
+*.js.map
+*.d.ts
+*.log
+.DS_Store
+*.swp
+*.swo
+.vscode/
+*.zip
+*.crx
+*.pem

@@ -1,0 +1,33 @@
+{
+  "name": "metric-mcmaster-extension",
+  "version": "1.0.0",
+  "description": "Converts imperial units to metric on McMaster-Carr and toggles tooltips via toolbar button.",
+  "scripts": {
+    "clean": "rm -rf dist/*",
+    "build:content": "bun build src/content.ts --outdir dist --target browser --minify --sourcemap --outfile content.js",
+    "build:background": "bun tsc src/background.ts --outDir dist",
+    "build": "bun run clean && bun run build:content && bun run build:background && bun run copy-static && bun run pack-crx-brave && bun run zip-dist",
+    "dev": "bun tsc --watch",
+    "copy-static": "bun copy-static.ts",
+    "pack-crx-brave": "brave-browser --pack-extension=dist --pack-extension-key=metric-mcmaster.pem && mv dist.crx metric-mcmaster.crx",
+    "pack-crx-chromium": "chromium --pack-extension=dist --pack-extension-key=metric-mcmaster.pem && mv dist.crx metric-mcmaster.crx",
+    "pack-crx-chrome": "chrome --pack-extension=dist --pack-extension-key=metric-mcmaster.pem && mv dist.crx metric-mcmaster.crx",
+    "zip-dist": "bun zip-dist.ts",
+    "test": "bun test",
+    "lint": "bunx eslint . --ext .ts",
+    "format": "bunx prettier --write .",
+    "check": "bun run lint && bun run format && bun run test"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^17.4.7",
+    "@types/chrome": "^0.0.323",
+    "@types/node": "^22.15.18",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "bun-types": "^1.2.13",
+    "eslint": "^8.0.0",
+    "happy-dom": "^17.4.7",
+    "prettier": "^3.0.0",
+    "typescript": "*"
+  }
+}
