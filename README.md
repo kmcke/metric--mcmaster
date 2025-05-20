@@ -58,7 +58,7 @@ bun test
 
 ## Permissions
 
-- Only requests `activeTab`, `scripting`, and host permissions for mcmaster.com
+- Only requests `activeTab`, and host permissions for mcmaster.com
 - No unnecessary permissions requested
 
 ## Security

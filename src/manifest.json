@@ -3,7 +3,7 @@
   "name": "Metric McMaster",
   "version": "1.0",
   "description": "Converts imperial units to metric on McMaster-Carr and toggles tooltips via toolbar button.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab"],
   "host_permissions": ["https://*.mcmaster.com/*", "https://mcmaster.com/*"],
   "background": {
     "service_worker": "background.js"
