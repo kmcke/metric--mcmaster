@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Metric McMaster",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Converts imperial units to metric on McMaster-Carr and toggles tooltips via toolbar button.",
   "permissions": ["activeTab"],
   "host_permissions": ["https://*.mcmaster.com/*", "https://mcmaster.com/*"],
