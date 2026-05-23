@@ -3,6 +3,8 @@ import {
   handleParentMixedParentUnitNode,
   handleSplitSpanQuoteNode,
   handleSplitNumberFractionQuoteNode,
+  handleLeafTextElement,
+  handleThreadTextElement,
   handleInlineTextNode,
 } from "./handlers";
 import { showTooltips, hideTooltips, areTooltipsVisible, prepareHoverTooltips } from "./tooltip";
@@ -40,6 +42,8 @@ function runConversion(): void {
       handleParentMixedParentUnitNode(el);
       handleSplitSpanQuoteNode(el);
       handleSplitNumberFractionQuoteNode(el);
+      handleThreadTextElement(el);
+      handleLeafTextElement(el);
     } else if (node.nodeType === Node.TEXT_NODE) {
       handleInlineTextNode(node);
     }

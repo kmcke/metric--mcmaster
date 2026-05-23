@@ -61,6 +61,13 @@ test("numbered screw thread callouts include major diameter", () => {
   expect(convertScrewSizeText("#8-32")).toBe("#8-32 = 4.17 mm\npitch 0.794 mm\ntap 3.45 mm (#29)");
 });
 
+test("inch thread callouts include diameter and pitch", () => {
+  expect(convertScrewSizeText('1/4"-32')).toBe('1/4"-32 = 6.35 mm\npitch 0.794 mm');
+  expect(convertTooltipText('5/16"-18')).toBe('5/16"-18 = 7.94 mm\npitch 1.411 mm');
+  expect(convertTooltipText("3/8″-16")).toBe("3/8″-16 = 9.52 mm\npitch 1.587 mm");
+  expect(convertSupportedText('1/4"-32')).toBe('1/4"-32 = 6.35 mm\npitch 0.794 mm');
+});
+
 test("explicit numbered screw gauges include major diameter", () => {
   expect(convertScrewSizeText("#8 screw")).toBe("screw 4.17 mm");
   expect(convertTooltipText("#8 screws")).toBe("screw 4.17 mm");
