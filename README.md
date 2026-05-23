@@ -1,12 +1,14 @@
 # Metric McMaster Chrome Extension
 
-Converts imperial units to metric on McMaster-Carr and toggles tooltips via toolbar button.
+Converts imperial units to metric on McMaster-Carr and toggles tooltips via toolbar button or keyboard shortcut.
 
 ## Features
 
 - Converts inches, feet, pounds, and °F to metric units on mcmaster.com
-- Shows metric conversions as tooltips
-- Toggle tooltips with the extension button
+- Shows metric conversions on hover
+- Toggle persistent tooltips with the extension button or `Alt+X`
+- Click a tooltip row to copy the raw metric number
+- Ctrl+click a tooltip row to copy the original value when available
 
 ## Build & Development
 
@@ -37,7 +39,8 @@ bun run build
 ### Manual Testing
 
 - Open mcmaster.com and verify conversions and tooltips
-- Use the extension button to toggle tooltips
+- Use the extension button or `Alt+X` to toggle persistent tooltips
+- Click tooltip rows to verify copy behavior
 
 ### Automated Testing
 

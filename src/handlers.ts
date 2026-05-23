@@ -1,13 +1,35 @@
 // handlers.ts
 // DOM node handlers for Metric McMaster
-import { converters, convertedAttr, convertInlineText } from "./conversion";
+import { converters, convertedAttr, convertAmbiguousSpecValueTooltip, convertTooltipText } from "./conversion";
 
 /**
- * Checks if an element has already been converted or is a direct child of <body>.
- * Prevents duplicate conversions and avoids converting top-level elements.
+ * Returns whether an element should be skipped by DOM conversion handlers.
+ * This prevents duplicate conversion, avoids top-level body children, and
+ * keeps generated extension tooltip rows from being converted recursively.
  */
 export function isConverted(el: Element): boolean {
-  return el.hasAttribute(convertedAttr) || el.parentElement === document.body;
+  return el.hasAttribute(convertedAttr) || el.parentElement === document.body || Boolean(el.closest("[data-metric-tooltip]"));
+}
+
+/**
+ * Safely tests a generated McMaster class string against a pattern.
+ */
+function hasClassNameMatch(el: Element, pattern: RegExp): boolean {
+  return typeof el.className === "string" && pattern.test(el.className);
+}
+
+/**
+ * Reads the label cell for a McMaster product-detail spec row.
+ * The label is used to resolve otherwise ambiguous single-value cells such as
+ * a bare letter drill size.
+ */
+function getProductDetailSpecRowLabel(el: Element): string | null {
+  const row = el.closest("tr");
+  if (!row || !hasClassNameMatch(row, /product-detail-spec-table-row/i)) return null;
+
+  const valueCell = el.closest("td");
+  const labelCell = Array.from(row.children).find((cell) => cell !== valueCell && cell.textContent?.trim());
+  return labelCell?.textContent?.trim() ?? null;
 }
 
 /**
@@ -71,13 +93,16 @@ export function handleParentMixedParentUnitNode(el: Element): void {
  * Sets a tooltip with the metric conversion if a match is found.
  */
 export function handleSplitSpanQuoteNode(el: Element): void {
-  if (el.hasAttribute(convertedAttr)) return;
-  // Filter out whitespace-only text nodes
+  if (isConverted(el)) return;
+  // McMaster sometimes splits the fraction and quote with formatting spans.
   const ch = Array.from(el.childNodes).filter(
     (n) => !(n.nodeType === Node.TEXT_NODE && !n.textContent?.trim()),
   );
   if (ch.length !== 2) return;
   const [first, second] = ch;
+  /**
+   * Extracts the fraction text from either a text node or a single-child wrapper.
+   */
   function extractFrac(node: Node): string | null {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent?.trim() ?? null;
     if ((node as Element).childNodes.length === 1)
@@ -141,15 +166,16 @@ export function handleSplitNumberFractionQuoteNode(el: Element): void {
 
 /**
  * Handles a text node containing an imperial measurement, converting it and setting a tooltip
- * on its parent element if a conversion is found.
- * Used for inline text conversions (e.g. <span>2 in</span>).
+ * on its parent element if a conversion is found. If plain text has no direct
+ * conversion, product-detail spec row context may resolve a bare drill-size
+ * value such as "F" in a "Drill Size" row.
  */
 export function handleInlineTextNode(node: Node): void {
   const parent = (node as ChildNode).parentElement;
   if (!parent || isConverted(parent)) return;
   const orig = node.textContent ?? "";
-  const conv = convertInlineText(orig);
-  if (conv !== orig) {
+  const conv = convertTooltipText(orig) ?? convertAmbiguousSpecValueTooltip(orig, getProductDetailSpecRowLabel(parent) ?? "");
+  if (conv) {
     parent.setAttribute("title", conv);
     parent.setAttribute(convertedAttr, "");
   }

@@ -16,6 +16,14 @@
   "action": {
     "default_title": "Toggle metric tooltips"
   },
+  "commands": {
+    "toggle-tooltips": {
+      "suggested_key": {
+        "default": "Alt+X"
+      },
+      "description": "Toggle metric tooltips"
+    }
+  },
   "content_scripts": [
     {
       "matches": ["*://*.mcmaster.com/*", "*://mcmaster.com/*"],
