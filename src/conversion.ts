@@ -205,6 +205,11 @@ export const screwThreadRegex = new RegExp(
 );
 
 /**
+ * Regex to match fractional or decimal inch thread callouts such as 1/4"-20.
+ */
+export const inchThreadRegex = /(^|[^\w#])((?:\d+[-\s]+)?\d+\/\d+|\d+(?:\.\d+)?)\s*("|″|in\b)\s*-\s*(\d{2,3})(?!\d)/gi;
+
+/**
  * Regex to match explicit screw gauge references while avoiding bare catalog/drill numbers.
  */
 export const screwGaugeRegex = new RegExp(
@@ -264,8 +269,11 @@ export function parseImperialNumber(str: string): number | null {
  * Returns the string with conversions appended (e.g. "2 in" => "2 in = 50.80 mm").
  */
 export function convertInlineText(text: string): string {
+  const inchThreadRanges = collectInchThreadRanges(text);
   inlineRegex.lastIndex = 0;
-  return text.replace(inlineRegex, (match, prefix, numStr, unitSpace, unit) => {
+  return text.replace(inlineRegex, (match, prefix, numStr, unitSpace, unit, offset) => {
+    const sourceStart = offset + prefix.length;
+    if (inchThreadRanges.some(([start, end]) => sourceStart >= start && sourceStart < end)) return match;
     const num = parseImperialNumber(numStr);
     const conv = converters[unit];
     return num != null && conv ? `${prefix}${numStr}${unitSpace}${unit} = ${conv(num)}` : match;
@@ -352,12 +360,28 @@ function formatThreadCallout(hash: string, size: number, tpi: number): string {
 }
 
 /**
+ * Formats an inch thread callout with its major diameter and pitch.
+ */
+function formatInchThreadCallout(sizeText: string, unit: string, tpi: number): string | null {
+  const diameterInches = parseImperialNumber(sizeText);
+  if (diameterInches == null) return null;
+  const source = unit.toLowerCase() === "in" ? `${sizeText} in-${tpi}` : `${sizeText}${unit}-${tpi}`;
+  return `${source} = ${(diameterInches * 25.4).toFixed(2)} mm\n${formatPitch(tpi)}`;
+}
+
+/**
  * Converts numbered imperial machine screw sizes to major diameter tooltips.
  * Handles thread callouts such as #8-32 and explicit gauge references such as #8 screw.
  */
 export function convertScrewSizeText(text: string): string {
+  inchThreadRegex.lastIndex = 0;
+  const withInchThreadCallouts = text.replace(inchThreadRegex, (match, prefix, sizeText, unit, tpiStr) => {
+    const replacement = formatInchThreadCallout(sizeText, unit, Number(tpiStr));
+    return replacement ? `${prefix}${replacement}` : match;
+  });
+
   screwThreadRegex.lastIndex = 0;
-  const withThreadCallouts = text.replace(screwThreadRegex, (match, prefix, hash, sizeStr, tpiStr) => {
+  const withThreadCallouts = withInchThreadCallouts.replace(screwThreadRegex, (match, prefix, hash, sizeStr, tpiStr) => {
     const size = Number(sizeStr);
     const tpi = Number(tpiStr);
     const diameter = formatScrewDiameter(size);
@@ -433,6 +457,13 @@ function addUnique(values: string[], value: string): void {
  */
 function collectScrewTooltips(text: string): string[] {
   const values: string[] = [];
+
+  inchThreadRegex.lastIndex = 0;
+  let inchThreadMatch: RegExpExecArray | null;
+  while ((inchThreadMatch = inchThreadRegex.exec(text))) {
+    const callout = formatInchThreadCallout(inchThreadMatch[2], inchThreadMatch[3], Number(inchThreadMatch[4]));
+    if (callout) addUnique(values, callout);
+  }
 
   screwThreadRegex.lastIndex = 0;
   let threadMatch: RegExpExecArray | null;
@@ -514,9 +545,12 @@ function collectToleranceTooltips(text: string): string[] {
  */
 function collectInlineTooltips(text: string): string[] {
   const values: string[] = [];
+  const inchThreadRanges = collectInchThreadRanges(text);
   inlineRegex.lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = inlineRegex.exec(text))) {
+    const sourceStart = match.index + match[1].length;
+    if (inchThreadRanges.some(([start, end]) => sourceStart >= start && sourceStart < end)) continue;
     const numStr = match[2];
     const unitSpace = match[3];
     const unit = match[4];
@@ -525,6 +559,38 @@ function collectInlineTooltips(text: string): string[] {
     if (num != null && conv) addUnique(values, `${numStr}${unitSpace}${unit} = ${conv(num)}`);
   }
   return values;
+}
+
+/**
+ * Returns source ranges occupied by inch thread callouts.
+ */
+function collectInchThreadRanges(text: string): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
+  inchThreadRegex.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = inchThreadRegex.exec(text))) {
+    ranges.push([match.index + match[1].length, match.index + match[0].length]);
+  }
+  return ranges;
+}
+
+/**
+ * Builds a tooltip only when the whole string is a thread callout.
+ */
+export function convertThreadTooltipText(text: string): string | null {
+  const trimmed = text.trim();
+  const tooltip = convertTooltipText(trimmed);
+  if (!tooltip) return null;
+
+  inchThreadRegex.lastIndex = 0;
+  const inchMatch = inchThreadRegex.exec(trimmed);
+  if (inchMatch && inchMatch.index + inchMatch[1].length === 0 && inchThreadRegex.lastIndex === trimmed.length) return tooltip;
+
+  screwThreadRegex.lastIndex = 0;
+  const screwMatch = screwThreadRegex.exec(trimmed);
+  if (screwMatch && screwMatch.index + screwMatch[1].length === 0 && screwThreadRegex.lastIndex === trimmed.length) return tooltip;
+
+  return null;
 }
 
 /**

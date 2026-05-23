@@ -1,6 +1,6 @@
 // handlers.ts
 // DOM node handlers for Metric McMaster
-import { converters, convertedAttr, convertAmbiguousSpecValueTooltip, convertTooltipText } from "./conversion";
+import { converters, convertedAttr, convertAmbiguousSpecValueTooltip, convertThreadTooltipText, convertTooltipText } from "./conversion";
 
 /**
  * Returns whether an element should be skipped by DOM conversion handlers.
@@ -8,7 +8,12 @@ import { converters, convertedAttr, convertAmbiguousSpecValueTooltip, convertToo
  * keeps generated extension tooltip rows from being converted recursively.
  */
 export function isConverted(el: Element): boolean {
-  return el.hasAttribute(convertedAttr) || el.parentElement === document.body || Boolean(el.closest("[data-metric-tooltip]"));
+  return (
+    el.hasAttribute(convertedAttr) ||
+    Boolean(el.parentElement?.closest(`[${convertedAttr}]`)) ||
+    el.parentElement === document.body ||
+    Boolean(el.closest("[data-metric-tooltip]"))
+  );
 }
 
 /**
@@ -161,6 +166,38 @@ export function handleSplitNumberFractionQuoteNode(el: Element): void {
         el.setAttribute(convertedAttr, "");
       }
     }
+  }
+}
+
+/**
+ * Handles leaf elements whose visible value is split across multiple text
+ * nodes, such as McMaster filter values rendered as "10", "-", "24" inside a
+ * single div. Parent containers with child elements are ignored to avoid
+ * creating broad, noisy tooltips.
+ */
+export function handleLeafTextElement(el: Element): void {
+  if (isConverted(el) || el.children.length > 0) return;
+  const text = el.textContent?.trim() ?? "";
+  if (!text) return;
+  const conv = convertTooltipText(text);
+  if (conv) {
+    el.setAttribute("title", conv);
+    el.setAttribute(convertedAttr, "");
+  }
+}
+
+/**
+ * Handles exact thread callouts split across child spans, such as McMaster
+ * sidebar filter values rendered as <span>1/4"</span>-32.
+ */
+export function handleThreadTextElement(el: Element): void {
+  if (isConverted(el) || el.children.length === 0) return;
+  const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+  if (!text || text.length > 40) return;
+  const conv = convertThreadTooltipText(text);
+  if (conv) {
+    el.setAttribute("title", conv);
+    el.setAttribute(convertedAttr, "");
   }
 }
 

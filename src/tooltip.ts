@@ -216,9 +216,18 @@ function hasScrollableOverflow(el: HTMLElement): boolean {
 }
 
 /**
+ * Returns whether a converted value is inside McMaster's sidebar filter panel.
+ * Sidebar filter values keep native title tooltips because McMaster's filter UI
+ * uses dense scroll/drag interactions that do not work well with HTML hover UI.
+ */
+export function isInsideMcMasterSpecSearchContainer(el: Element): boolean {
+  return Boolean(el.closest("#SpecSrch_Cntnr"));
+}
+
+/**
  * Returns whether a converted value is inside one of McMaster's scrollable
  * filter panes. Persistent overlay tooltips skip those panes to avoid clutter;
- * hover tooltips still work there.
+ * native title tooltips still work there.
  */
 export function isInsideMcMasterSpecSearchScrollContainer(el: Element): boolean {
   const specSearchContainer = el.closest("#SpecSrch_Cntnr");
@@ -326,6 +335,7 @@ function onHoverMouseMove(event: MouseEvent): void {
  */
 function showHoverTooltip(el: Element): void {
   if (tooltipsVisible) return;
+  if (isInsideMcMasterSpecSearchContainer(el)) return;
   const titleText = getMetricTitle(el);
   if (!titleText || !isElementVisible(el)) return;
 
@@ -352,11 +362,20 @@ function showHoverTooltip(el: Element): void {
  * do not appear on top of the extension tooltip.
  */
 export function prepareHoverTooltips(): void {
+  document.querySelectorAll(`[data-metric-title][${convertedAttr}]`).forEach((el) => {
+    if (!isInsideMcMasterSpecSearchContainer(el)) return;
+    const titleText = el.getAttribute("data-metric-title");
+    if (titleText) el.setAttribute("title", titleText);
+    el.removeAttribute("data-metric-title");
+    el.removeAttribute("data-metric-hover-bound");
+  });
+
   document
     .querySelectorAll(
       `[title][${convertedAttr}]:not([data-metric-hover-bound]), [data-metric-title][${convertedAttr}]:not([data-metric-hover-bound])`,
     )
     .forEach((el) => {
+      if (isInsideMcMasterSpecSearchContainer(el)) return;
       const titleText = el.getAttribute("title");
       if (titleText) {
         el.setAttribute("data-metric-title", titleText);

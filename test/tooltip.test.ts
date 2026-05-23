@@ -5,6 +5,7 @@ import {
   extractPrimaryImperialCopyValue,
   extractPrimaryMetricCopyValue,
   getCopyValueForClick,
+  isInsideMcMasterSpecSearchContainer,
   isInsideMcMasterSpecSearchScrollContainer,
   prepareHoverTooltips,
   showTooltips,
@@ -80,6 +81,18 @@ test("detects converted values inside McMaster spec search scroll containers", (
   expect(isInsideMcMasterSpecSearchScrollContainer(document.getElementById("outside")!)).toBe(false);
 });
 
+test("detects converted values inside McMaster spec search filter panel", () => {
+  document.body.innerHTML = `
+    <div id="SpecSrch_Cntnr">
+      <span id="inside">8-32</span>
+    </div>
+    <span id="outside">3/32"</span>
+  `;
+
+  expect(isInsideMcMasterSpecSearchContainer(document.getElementById("inside")!)).toBe(true);
+  expect(isInsideMcMasterSpecSearchContainer(document.getElementById("outside")!)).toBe(false);
+});
+
 test("does not suppress toolbar overlays outside McMaster spec search filter panel", () => {
   document.body.innerHTML = `
     <div id="scrollable" style="overflow-y: auto;">
@@ -91,6 +104,40 @@ test("does not suppress toolbar overlays outside McMaster spec search filter pan
   Object.defineProperty(scrollable, "scrollHeight", { configurable: true, value: 200 });
 
   expect(isInsideMcMasterSpecSearchScrollContainer(document.getElementById("inside")!)).toBe(false);
+});
+
+test("filter panel values keep native title tooltips instead of custom hover tooltips", () => {
+  document.body.innerHTML = `
+    <div id="SpecSrch_Cntnr">
+      <span id="value" ${convertedAttr} title="8-32 = 4.17 mm">8-32</span>
+    </div>
+  `;
+  const value = document.getElementById("value")!;
+  makeVisible(value);
+
+  prepareHoverTooltips();
+
+  expect(value.getAttribute("title")).toBe("8-32 = 4.17 mm");
+  expect(value.getAttribute("data-metric-title")).toBe(null);
+  expect(value.hasAttribute("data-metric-hover-bound")).toBe(false);
+
+  value.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+  expect(metricTooltipCount()).toBe(0);
+});
+
+test("filter panel values restore native title text if hover setup previously stored it", () => {
+  document.body.innerHTML = `
+    <div id="SpecSrch_Cntnr">
+      <span id="value" ${convertedAttr} data-metric-title="8-32 = 4.17 mm" data-metric-hover-bound>8-32</span>
+    </div>
+  `;
+  const value = document.getElementById("value")!;
+
+  prepareHoverTooltips();
+
+  expect(value.getAttribute("title")).toBe("8-32 = 4.17 mm");
+  expect(value.getAttribute("data-metric-title")).toBe(null);
+  expect(value.hasAttribute("data-metric-hover-bound")).toBe(false);
 });
 
 test("hover tooltip does not show while toolbar overlays are active", () => {

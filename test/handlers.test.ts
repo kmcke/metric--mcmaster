@@ -4,6 +4,8 @@ import {
   handleParentMixedParentUnitNode,
   handleSplitSpanQuoteNode,
   handleSplitNumberFractionQuoteNode,
+  handleLeafTextElement,
+  handleThreadTextElement,
   handleInlineTextNode,
 } from "../src/handlers";
 import { convertedAttr } from "../src/conversion";
@@ -80,6 +82,32 @@ describe("handlers integration with DOM structures", () => {
     handleInlineTextNode(textNode);
     expect(el.getAttribute("title")).toBe("#8-32 = 4.17 mm\npitch 0.794 mm\ntap 3.45 mm (#29)");
     expect(el.hasAttribute(convertedAttr)).toBe(true);
+  });
+
+  test("handleLeafTextElement: split thread callout in McMaster filter value", () => {
+    const el = createElementFromHTML("<div>10<br>-<br>24</div>");
+    el.querySelectorAll("br").forEach((br) => br.replaceWith(document.createTextNode("")));
+    handleLeafTextElement(el);
+    expect(el.getAttribute("title")).toBe("10-24 = 4.83 mm\npitch 1.058 mm\ntap 3.80 mm (#25)");
+    expect(el.hasAttribute(convertedAttr)).toBe(true);
+  });
+
+  test("handleLeafTextElement: parent containers with child elements are ignored", () => {
+    const el = createElementFromHTML("<div><span>10</span><span>-</span><span>24</span></div>");
+    handleLeafTextElement(el);
+    expect(el.getAttribute("title")).toBe(null);
+    expect(el.hasAttribute(convertedAttr)).toBe(false);
+  });
+
+  test('handleThreadTextElement: sidebar value split as <span>1/4"</span>-32', () => {
+    const el = createElementFromHTML('<div><span>1/4"</span>-32</div>');
+    const child = el.querySelector("span")!;
+    handleThreadTextElement(el);
+    handleInlineTextNode(child.firstChild!);
+    expect(el.getAttribute("title")).toBe('1/4"-32 = 6.35 mm\npitch 0.794 mm');
+    expect(el.hasAttribute(convertedAttr)).toBe(true);
+    expect(child.getAttribute("title")).toBe(null);
+    expect(child.hasAttribute(convertedAttr)).toBe(false);
   });
 
   test("handleInlineTextNode: bare letter drill size in product detail spec row", () => {
