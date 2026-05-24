@@ -1,0 +1,38 @@
+body {
+  margin: 0;
+  color: #1f2933;
+  font: 14px/1.4 Arial, sans-serif;
+  background: #f6f7f8;
+}
+
+main {
+  width: 280px;
+  padding: 16px;
+}
+
+h1 {
+  margin: 0 0 16px;
+  color: #2f6f37;
+  font-size: 18px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #aeb7bf;
+  border-radius: 4px;
+  font: inherit;
+}
+
+#status {
+  min-height: 20px;
+  margin: 10px 0 0;
+  color: #2f6f37;
+}

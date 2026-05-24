@@ -8,6 +8,7 @@ import {
   handleInlineTextNode,
 } from "./handlers";
 import { showTooltips, hideTooltips, areTooltipsVisible, prepareHoverTooltips } from "./tooltip";
+import { decimalPlacesSettingKey, loadSettings } from "./settings";
 
 /**
  * Returns whether a node is part of the extension's own tooltip UI.
@@ -75,9 +76,13 @@ function onUserScrollOrWheel(): void {
 /**
  * Performs initial conversion setup and watches for McMaster DOM updates.
  */
-function initialize(): void {
+async function initialize(): Promise<void> {
+  await loadSettings();
   runConversion();
   new MutationObserver(runConversion).observe(document.body, { childList: true, subtree: true });
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "sync" && changes[decimalPlacesSettingKey]) window.location.reload();
+  });
 }
 
 // Initialize

@@ -1,19 +1,54 @@
 // conversion.ts
 // Conversion utilities and helpers for Metric McMaster
 
+const defaultDecimalPlaces = 2;
+const minDecimalPlaces = 2;
+const maxDecimalPlaces = 8;
+let decimalPlaces = defaultDecimalPlaces;
+
+/**
+ * Clamps user-configured decimal places to the supported range.
+ */
+export function normalizeDecimalPlaces(value: unknown): number {
+  const numericValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numericValue)) return defaultDecimalPlaces;
+  return Math.min(maxDecimalPlaces, Math.max(minDecimalPlaces, Math.trunc(numericValue)));
+}
+
+/**
+ * Updates the decimal precision used for normal metric conversions.
+ */
+export function setDecimalPlaces(value: unknown): void {
+  decimalPlaces = normalizeDecimalPlaces(value);
+}
+
+/**
+ * Returns the active normal metric conversion precision.
+ */
+export function getDecimalPlaces(): number {
+  return decimalPlaces;
+}
+
+/**
+ * Formats normal metric values with the configured precision.
+ */
+function formatMetricValue(value: number, unit: string, minimumDecimalPlaces = minDecimalPlaces): string {
+  return `${value.toFixed(Math.max(decimalPlaces, minimumDecimalPlaces))} ${unit}`;
+}
+
 /**
  * Map of imperial unit keys to conversion functions that return formatted metric strings.
  * Handles inches, feet, pounds, and Fahrenheit.
  */
 export const converters: Record<string, (v: number) => string> = {
-  in: (v) => (v * 25.4).toFixed(2) + " mm",
-  '"': (v) => (v * 25.4).toFixed(2) + " mm",
-  "″": (v) => (v * 25.4).toFixed(2) + " mm",
-  ft: (v) => (v * 0.3048).toFixed(2) + " m",
-  "'": (v) => (v * 0.3048).toFixed(2) + " m",
-  "′": (v) => (v * 0.3048).toFixed(2) + " m",
-  lb: (v) => (v * 0.453592).toFixed(2) + " kg",
-  "°F": (v) => (((v - 32) * 5) / 9).toFixed(1) + " °C",
+  in: (v) => formatMetricValue(v * 25.4, "mm"),
+  '"': (v) => formatMetricValue(v * 25.4, "mm"),
+  "″": (v) => formatMetricValue(v * 25.4, "mm"),
+  ft: (v) => formatMetricValue(v * 0.3048, "m"),
+  "'": (v) => formatMetricValue(v * 0.3048, "m"),
+  "′": (v) => formatMetricValue(v * 0.3048, "m"),
+  lb: (v) => formatMetricValue(v * 0.453592, "kg"),
+  "°F": (v) => formatMetricValue(((v - 32) * 5) / 9, "°C"),
 };
 
 /**
@@ -295,7 +330,7 @@ export function screwMajorDiameterInches(size: number): number | null {
 function formatScrewDiameter(size: number): string | null {
   const diameterInches = screwMajorDiameterInches(size);
   if (diameterInches == null) return null;
-  return `${(diameterInches * 25.4).toFixed(2)} mm`;
+  return formatMetricValue(diameterInches * 25.4, "mm");
 }
 
 /**
@@ -304,7 +339,7 @@ function formatScrewDiameter(size: number): string | null {
 function formatNumberDrillDiameter(size: number): string | null {
   const diameterInches = numberDrillInchesBySize[size];
   if (diameterInches == null) return null;
-  return `${(diameterInches * 25.4).toFixed(2)} mm`;
+  return formatMetricValue(diameterInches * 25.4, "mm");
 }
 
 /**
@@ -313,7 +348,7 @@ function formatNumberDrillDiameter(size: number): string | null {
 function formatLetterDrillDiameter(size: string): string | null {
   const diameterInches = letterDrillInchesBySize[size.toUpperCase()];
   if (diameterInches == null) return null;
-  return `${(diameterInches * 25.4).toFixed(2)} mm`;
+  return formatMetricValue(diameterInches * 25.4, "mm");
 }
 
 /**
@@ -340,7 +375,7 @@ function isStandardScrewThread(size: number, tpi: number): boolean {
  * Formats thread pitch from threads-per-inch as millimeters per thread.
  */
 function formatPitch(tpi: number): string {
-  return `pitch ${(25.4 / tpi).toFixed(3)} mm`;
+  return `pitch ${formatMetricValue(25.4 / tpi, "mm", 3)}`;
 }
 
 /**
@@ -349,7 +384,7 @@ function formatPitch(tpi: number): string {
 function formatTapDrill(size: number, tpi: number): string | null {
   const tapDrill = screwThreadInfoByCallout[`${size}-${tpi}`];
   if (!tapDrill) return null;
-  return `tap ${(tapDrill.tapDrillInches * 25.4).toFixed(2)} mm (${tapDrill.tapDrill})`;
+  return `tap ${formatMetricValue(tapDrill.tapDrillInches * 25.4, "mm")} (${tapDrill.tapDrill})`;
 }
 
 /**
@@ -366,7 +401,7 @@ function formatInchThreadCallout(sizeText: string, unit: string, tpi: number): s
   const diameterInches = parseImperialNumber(sizeText);
   if (diameterInches == null) return null;
   const source = unit.toLowerCase() === "in" ? `${sizeText} in-${tpi}` : `${sizeText}${unit}-${tpi}`;
-  return `${source} = ${(diameterInches * 25.4).toFixed(2)} mm\n${formatPitch(tpi)}`;
+  return `${source} = ${formatMetricValue(diameterInches * 25.4, "mm")}\n${formatPitch(tpi)}`;
 }
 
 /**
@@ -440,7 +475,7 @@ export function convertToleranceText(text: string): string {
     const inches = Number(valueStr);
     if (Number.isNaN(inches)) return match;
     const metricSign = sign === "+/-" ? "±" : sign;
-    return `${prefix}${sign}${valueStr}" = ${metricSign}${(inches * 25.4).toFixed(3)} mm`;
+    return `${prefix}${sign}${valueStr}" = ${metricSign}${formatMetricValue(inches * 25.4, "mm", 3)}`;
   });
 }
 
@@ -535,7 +570,7 @@ function collectToleranceTooltips(text: string): string[] {
   while ((match = toleranceRegex.exec(text))) {
     const inches = Number(match[3]);
     const metricSign = match[2] === "+/-" ? "±" : match[2];
-    if (!Number.isNaN(inches)) addUnique(values, `${metricSign}${(inches * 25.4).toFixed(3)} mm`);
+    if (!Number.isNaN(inches)) addUnique(values, `${metricSign}${formatMetricValue(inches * 25.4, "mm", 3)}`);
   }
   return values;
 }

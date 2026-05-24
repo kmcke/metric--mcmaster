@@ -1,12 +1,13 @@
 {
   "name": "metric-mcmaster-extension",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Converts imperial units to metric on McMaster-Carr and toggles tooltips via toolbar button.",
   "scripts": {
     "clean": "rm -rf dist/*",
     "build:content": "bun build src/content.ts --outdir dist --target browser --minify --sourcemap --outfile content.js",
     "build:background": "bun tsc src/background.ts --outDir dist",
-    "build": "bun run clean && bun run build:content && bun run build:background && bun run copy-static && bun run pack-crx-brave && bun run zip-dist",
+    "build:options": "bun build src/options.ts --outdir dist --target browser --minify --sourcemap --outfile options.js",
+    "build": "bun run clean && bun run build:content && bun run build:background && bun run build:options && bun run copy-static && bun run pack-crx-brave && bun run zip-dist",
     "dev": "bun tsc --watch",
     "copy-static": "bun copy-static.ts",
     "pack-crx-brave": "brave-browser --pack-extension=dist --pack-extension-key=metric-mcmaster.pem && mv dist.crx metric-mcmaster.crx",
