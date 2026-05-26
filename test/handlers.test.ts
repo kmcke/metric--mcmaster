@@ -4,6 +4,7 @@ import {
   handleParentMixedParentUnitNode,
   handleSplitSpanQuoteNode,
   handleSplitNumberFractionQuoteNode,
+  handleSpecSearchFilterItemElement,
   handleLeafTextElement,
   handleThreadTextElement,
   handleInlineTextNode,
@@ -97,6 +98,36 @@ describe("handlers integration with DOM structures", () => {
     handleLeafTextElement(el);
     expect(el.getAttribute("title")).toBe(null);
     expect(el.hasAttribute(convertedAttr)).toBe(false);
+  });
+
+  test('handleSpecSearchFilterItemElement: mixed fractions are converted on the filter item', () => {
+    const panel = createElementFromHTML(`
+      <div id="SpecSrch_Cntnr">
+        <div class="_flexTable_88wqr_1">
+          <div style="flex-basis: 33%">
+            <div title="Click and drag to select a range of values">
+              <a href="length~2-1-2/">
+                <div>
+                  <div>
+                    <div>2 <span>1/2"</span></div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+    const column = panel.querySelector("._flexTable_88wqr_1 > div")!;
+    const item = panel.querySelector('[title="Click and drag to select a range of values"]')!;
+    const child = panel.querySelector("span")!;
+    handleParentMixedParentUnitNode(column);
+    handleSpecSearchFilterItemElement(item);
+    handleInlineTextNode(child.firstChild!);
+    expect(column.getAttribute("title")).toBe(null);
+    expect(item.getAttribute("title")).toBe('2 1/2" = 63.50 mm');
+    expect(item.hasAttribute(convertedAttr)).toBe(true);
+    expect(child.getAttribute("title")).toBe(null);
   });
 
   test('handleThreadTextElement: sidebar value split as <span>1/4"</span>-32', () => {

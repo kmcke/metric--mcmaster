@@ -3,6 +3,7 @@ import {
   handleParentMixedParentUnitNode,
   handleSplitSpanQuoteNode,
   handleSplitNumberFractionQuoteNode,
+  handleSpecSearchFilterItemElement,
   handleLeafTextElement,
   handleThreadTextElement,
   handleInlineTextNode,
@@ -43,6 +44,7 @@ function runConversion(): void {
       handleParentMixedParentUnitNode(el);
       handleSplitSpanQuoteNode(el);
       handleSplitNumberFractionQuoteNode(el);
+      handleSpecSearchFilterItemElement(el);
       handleThreadTextElement(el);
       handleLeafTextElement(el);
     } else if (node.nodeType === Node.TEXT_NODE) {
