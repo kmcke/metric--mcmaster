@@ -13,6 +13,8 @@ if (!existsSync(join(distDir, "assets"))) mkdirSync(join(distDir, "assets"));
 
 // Copy manifest.json
 copyFileSync(join(srcDir, "manifest.json"), join(distDir, "manifest.json"));
+copyFileSync(join(srcDir, "options.html"), join(distDir, "options.html"));
+copyFileSync(join(srcDir, "options.css"), join(distDir, "options.css"));
 
 // Copy all icons from src/assets to dist/assets
 for (const file of readdirSync(assetsDir)) {

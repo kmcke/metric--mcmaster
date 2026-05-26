@@ -24,6 +24,23 @@ function hasClassNameMatch(el: Element, pattern: RegExp): boolean {
 }
 
 /**
+ * Applies a metric title and, inside McMaster filter panes, moves that title to
+ * the titled filter item that Chrome uses for native tooltip display.
+ */
+function setConversionTitle(el: Element, title: string): void {
+  el.setAttribute("title", title);
+  el.setAttribute(convertedAttr, "");
+
+  const filterContainer = el.closest("#SpecSrch_Cntnr");
+  if (!filterContainer) return;
+
+  const filterItem = el.closest('[title="Click and drag to select a range of values"]');
+  if (!filterItem || filterItem === el) return;
+  filterItem.setAttribute("title", title);
+  filterItem.setAttribute(convertedAttr, "");
+}
+
+/**
  * Reads the label cell for a McMaster product-detail spec row.
  * The label is used to resolve otherwise ambiguous single-value cells such as
  * a bare letter drill size.
@@ -62,8 +79,7 @@ export function handleParentMixedSpanNode(el: Element): void {
       const total = +whole + num / den;
       const conv = converters[unit];
       if (conv) {
-        el.setAttribute("title", `${whole} ${num}/${den}${unit} = ${conv(total)}`);
-        el.setAttribute(convertedAttr, "");
+        setConversionTitle(el, `${whole} ${num}/${den}${unit} = ${conv(total)}`);
       }
     }
   }
@@ -75,7 +91,7 @@ export function handleParentMixedSpanNode(el: Element): void {
  * Sets a tooltip with the metric conversion if a match is found.
  */
 export function handleParentMixedParentUnitNode(el: Element): void {
-  if (isConverted(el)) return;
+  if (isConverted(el) || el.children.length > 0) return;
   const text = el.textContent?.trim() ?? "";
   const m = text.match(/^(\d+)\s+(\d+)\/(\d+)(['"″])/);
   if (m) {
@@ -86,8 +102,7 @@ export function handleParentMixedParentUnitNode(el: Element): void {
     const total = whole + num / den;
     const conv = converters[unit];
     if (conv) {
-      el.setAttribute("title", `${whole} ${num}/${den}${unit} = ${conv(total)}`);
-      el.setAttribute(convertedAttr, "");
+      setConversionTitle(el, `${whole} ${num}/${den}${unit} = ${conv(total)}`);
     }
   }
 }
@@ -132,8 +147,7 @@ export function handleSplitSpanQuoteNode(el: Element): void {
   const total = +num / +den;
   const conv = converters['"'];
   if (!conv) return;
-  el.setAttribute("title", `${frac}" = ${conv(total)}`);
-  el.setAttribute(convertedAttr, "");
+  setConversionTitle(el, `${frac}" = ${conv(total)}`);
 }
 
 /**
@@ -162,11 +176,23 @@ export function handleSplitNumberFractionQuoteNode(el: Element): void {
       const total = whole + +num / +den;
       const conv = converters['"'];
       if (conv) {
-        el.setAttribute("title", `${whole} ${num}/${den}" = ${conv(total)}`);
-        el.setAttribute(convertedAttr, "");
+        setConversionTitle(el, `${whole} ${num}/${den}" = ${conv(total)}`);
       }
     }
   }
+}
+
+/**
+ * Handles McMaster sidebar filter items directly so native browser tooltips
+ * appear on the hovered filter value instead of an inner span or column.
+ */
+export function handleSpecSearchFilterItemElement(el: Element): void {
+  if (isConverted(el) || !el.closest("#SpecSrch_Cntnr")) return;
+  if (el.getAttribute("title") !== "Click and drag to select a range of values") return;
+  const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+  if (!text || text.length > 40) return;
+  const conv = convertThreadTooltipText(text) ?? convertTooltipText(text);
+  if (conv) setConversionTitle(el, conv);
 }
 
 /**
@@ -181,8 +207,7 @@ export function handleLeafTextElement(el: Element): void {
   if (!text) return;
   const conv = convertTooltipText(text);
   if (conv) {
-    el.setAttribute("title", conv);
-    el.setAttribute(convertedAttr, "");
+    setConversionTitle(el, conv);
   }
 }
 
@@ -196,8 +221,7 @@ export function handleThreadTextElement(el: Element): void {
   if (!text || text.length > 40) return;
   const conv = convertThreadTooltipText(text);
   if (conv) {
-    el.setAttribute("title", conv);
-    el.setAttribute(convertedAttr, "");
+    setConversionTitle(el, conv);
   }
 }
 
@@ -213,7 +237,6 @@ export function handleInlineTextNode(node: Node): void {
   const orig = node.textContent ?? "";
   const conv = convertTooltipText(orig) ?? convertAmbiguousSpecValueTooltip(orig, getProductDetailSpecRowLabel(parent) ?? "");
   if (conv) {
-    parent.setAttribute("title", conv);
-    parent.setAttribute(convertedAttr, "");
+    setConversionTitle(parent, conv);
   }
 }

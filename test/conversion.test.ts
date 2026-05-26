@@ -6,6 +6,9 @@ import {
   convertSupportedText,
   convertTooltipText,
   convertToleranceText,
+  getDecimalPlaces,
+  normalizeDecimalPlaces,
+  setDecimalPlaces,
 } from "../src/conversion";
 
 test("inches to mm", () => {
@@ -21,7 +24,22 @@ test("pounds to kg", () => {
 });
 
 test("Fahrenheit to Celsius", () => {
-  expect(convertInlineText("32 °F")).toBe("32 °F = 0.0 °C");
+  expect(convertInlineText("32 °F")).toBe("32 °F = 0.00 °C");
+});
+
+test("decimal places are configurable for normal metric values", () => {
+  expect(normalizeDecimalPlaces(1)).toBe(2);
+  expect(normalizeDecimalPlaces(9)).toBe(8);
+  expect(normalizeDecimalPlaces("4")).toBe(4);
+
+  setDecimalPlaces(4);
+  expect(getDecimalPlaces()).toBe(4);
+  expect(convertInlineText('3/16"')).toBe('3/16" = 4.7625 mm');
+  expect(convertTooltipText("#8 screw")).toBe("screw 4.1656 mm");
+  expect(convertTooltipText('5/16"-24')).toBe('5/16"-24 = 7.9375 mm\npitch 1.0583 mm');
+  expect(convertTooltipText('+/-0.005"')).toBe("±0.1270 mm");
+
+  setDecimalPlaces(2);
 });
 
 test("fractional inches to mm", () => {
@@ -33,7 +51,7 @@ test("fractional inches to mm", () => {
 
 test("negative and zero values", () => {
   expect(convertInlineText("0 ft")).toBe("0 ft = 0.00 m");
-  expect(convertInlineText("-5 °F")).toBe("-5 °F = -20.6 °C");
+  expect(convertInlineText("-5 °F")).toBe("-5 °F = -20.56 °C");
   expect(convertSupportedText("-0.5 in")).toBe("-0.5 in = -12.70 mm");
   expect(convertTooltipText("-0.5 in")).toBe("-0.5 in = -12.70 mm");
 });

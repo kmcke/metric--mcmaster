@@ -3,11 +3,13 @@ import {
   handleParentMixedParentUnitNode,
   handleSplitSpanQuoteNode,
   handleSplitNumberFractionQuoteNode,
+  handleSpecSearchFilterItemElement,
   handleLeafTextElement,
   handleThreadTextElement,
   handleInlineTextNode,
 } from "./handlers";
 import { showTooltips, hideTooltips, areTooltipsVisible, prepareHoverTooltips } from "./tooltip";
+import { decimalPlacesSettingKey, loadSettings } from "./settings";
 
 /**
  * Returns whether a node is part of the extension's own tooltip UI.
@@ -42,6 +44,7 @@ function runConversion(): void {
       handleParentMixedParentUnitNode(el);
       handleSplitSpanQuoteNode(el);
       handleSplitNumberFractionQuoteNode(el);
+      handleSpecSearchFilterItemElement(el);
       handleThreadTextElement(el);
       handleLeafTextElement(el);
     } else if (node.nodeType === Node.TEXT_NODE) {
@@ -75,9 +78,13 @@ function onUserScrollOrWheel(): void {
 /**
  * Performs initial conversion setup and watches for McMaster DOM updates.
  */
-function initialize(): void {
+async function initialize(): Promise<void> {
+  await loadSettings();
   runConversion();
   new MutationObserver(runConversion).observe(document.body, { childList: true, subtree: true });
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "sync" && changes[decimalPlacesSettingKey]) window.location.reload();
+  });
 }
 
 // Initialize
